@@ -18,21 +18,26 @@ export default function AffiliateHub() {
     setLoading(true);
     setMessage('');
 
-    const res = await fetch('/api/affiliate/apply', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
+    try {
+      const res = await fetch('/api/affiliate/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      setMessage('✅ สมัครสำเร็จ! ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมง');
-      setFormData({ name: '', email: '', phone: '', platform: 'instagram', followers: '' });
-    } else {
-      setMessage('❌ ' + (data.message || 'เกิดข้อผิดพลาด'));
+      if (data.success) {
+        setMessage('✅ สมัคร Affiliate สำเร็จ! ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมง');
+        setFormData({ name: '', email: '', phone: '', platform: 'instagram', followers: '' });
+      } else {
+        setMessage('❌ ' + (data.message || 'เกิดข้อผิดพลาด'));
+      }
+    } catch (error) {
+      setMessage('❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -47,18 +52,47 @@ export default function AffiliateHub() {
           <h2 className="text-3xl font-bold text-center mb-8">สมัครเป็น Affiliate ทันที</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            <input type="text" placeholder="ชื่อ-นามสกุล" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-5 rounded-2xl border" required />
-            <input type="email" placeholder="อีเมล" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full p-5 rounded-2xl border" required />
-            <input type="tel" placeholder="เบอร์โทรศัพท์" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full p-5 rounded-2xl border" />
-            
-            <select value={formData.platform} onChange={(e) => setFormData({...formData, platform: e.target.value})} className="w-full p-5 rounded-2xl border" required>
+            <input 
+              type="text" 
+              placeholder="ชื่อ-นามสกุล" 
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full p-5 rounded-2xl border focus:outline-none focus:border-purple-500" 
+              required 
+            />
+            <input 
+              type="email" 
+              placeholder="อีเมล" 
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full p-5 rounded-2xl border focus:outline-none focus:border-purple-500" 
+              required 
+            />
+            <input 
+              type="tel" 
+              placeholder="เบอร์โทรศัพท์" 
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              className="w-full p-5 rounded-2xl border focus:outline-none focus:border-purple-500" 
+            />
+
+            <select 
+              value={formData.platform}
+              onChange={(e) => setFormData({...formData, platform: e.target.value})}
+              className="w-full p-5 rounded-2xl border focus:outline-none focus:border-purple-500"
+              required
+            >
               <option value="instagram">Instagram</option>
               <option value="tiktok">TikTok</option>
               <option value="facebook">Facebook</option>
               <option value="youtube">YouTube</option>
             </select>
 
-            <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-orange-500 to-purple-600 text-white text-xl font-bold rounded-2xl">
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-6 bg-gradient-to-r from-orange-500 to-purple-600 text-white text-xl font-bold rounded-2xl hover:scale-105 transition"
+            >
               {loading ? 'กำลังส่งข้อมูล...' : 'สมัคร Affiliate ฟรี คลิกเดียว'}
             </button>
 
