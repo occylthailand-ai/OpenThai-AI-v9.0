@@ -47,8 +47,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-
+    // NOTE: deliberately do NOT parse the request body. These diagnostics are derived purely from
+    // the running process (memory/uptime/node version) and never used any input. The old code did
+    // `await request.json()`, which THROWS on an empty/absent body — exactly how a monitoring probe
+    // calls a health endpoint (`curl -X POST .../health` with no body) — so every normal diagnostics
+    // probe fell into the catch and returned 500, masking the real health it was meant to report.
     const diagnostics = {
       status: 'ok',
       timestamp: new Date().toISOString(),
