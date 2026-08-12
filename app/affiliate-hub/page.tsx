@@ -12,9 +12,17 @@ export default function AffiliateHub() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  // PDPA: เก็บชื่อ/อีเมล/เบอร์โทร (ข้อมูลส่วนบุคคล) ต้องได้รับความยินยอมก่อนเสมอ — backend จริง
+  // (registerAffiliateCore) ปฏิเสธคำขอที่ consent !== true อยู่แล้ว ฟอร์มนี้จึงต้องขอความยินยอม
+  // และส่ง consent ไปด้วย ไม่งั้นทุกใบสมัครจะถูกปฏิเสธ (และเก็บ PII โดยไม่มีฐานทางกฎหมาย)
+  const [consent, setConsent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!consent) {
+      setMessage('❌ กรุณายอมรับนโยบายความเป็นส่วนตัว (PDPA) ก่อนสมัคร');
+      return;
+    }
     setLoading(true);
     setMessage('');
 
@@ -22,16 +30,20 @@ export default function AffiliateHub() {
       const res = await fetch('/api/affiliate/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, consent }),
       });
 
-      const data = await res.json();
+      // response อาจไม่ใช่ JSON (เช่น 404/หน้า error ของ Next) — กันไม่ให้ res.json() throw
+      // แล้วเด้งไป catch เป็น "เกิดข้อผิดพลาด" ลอยๆ ตรวจ res.ok ร่วมด้วยก่อนถือว่าสำเร็จ
+      let data: { success?: boolean; message?: string } = {};
+      try { data = await res.json(); } catch { /* non-JSON response */ }
 
-      if (data.success) {
+      if (res.ok && data.success) {
         setMessage('✅ สมัคร Affiliate สำเร็จ! ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมง');
         setFormData({ name: '', email: '', phone: '', platform: 'instagram', followers: '' });
+        setConsent(false);
       } else {
-        setMessage('❌ ' + (data.message || 'เกิดข้อผิดพลาด'));
+        setMessage('❌ ' + (data.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'));
       }
     } catch (error) {
       setMessage('❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
@@ -63,7 +75,18 @@ export default function AffiliateHub() {
               <option value="youtube">YouTube</option>
             </select>
 
-            <button type="submit" disabled={loading} className="w-full py-6 bg-gradient-to-r from-orange-500 to-purple-600 text-white text-xl font-bold rounded-2xl hover:scale-105 transition">
+            <label className="flex items-start gap-3 text-sm text-gray-700">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1 h-5 w-5 shrink-0" required />
+              <span>
+                ข้าพเจ้ายินยอมให้ OpenThai AI เก็บและใช้ข้อมูลส่วนบุคคล (ชื่อ อีเมล เบอร์โทร) เพื่อการสมัคร Affiliate
+                ตาม{' '}
+                <a href="https://www.openthai-ai.com/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-600 underline">
+                  นโยบายความเป็นส่วนตัว (PDPA)
+                </a>
+              </span>
+            </label>
+
+            <button type="submit" disabled={loading || !consent} className="w-full py-6 bg-gradient-to-r from-orange-500 to-purple-600 text-white text-xl font-bold rounded-2xl hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
               {loading ? 'กำลังส่งข้อมูล...' : 'สมัคร Affiliate ฟรี คลิกเดียว'}
             </button>
 
